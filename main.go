@@ -8,10 +8,10 @@ import (
 )
 
 type album struct {
-	ID     string  `json: "id"`
-	Title  string  `json: "title"`
-	Artist string  `json: "artist"`
-	Price  float64 `json: "price"`
+	ID     string  `json:"id"`
+	Title  string  `json:"title"`
+	Artist string  `json:"artist"`
+	Price  float64 `json:"price"`
 }
 
 // SLICE DE TIPO ALBUM
@@ -46,7 +46,40 @@ var albums = []album{
 // CONTROLADOR PARA DEVOLVER LOS DATOS - RESPONDER AL CLIETNE
 func getAlbums(c *gin.Context) {
 	// RESPONDER AL CLIENTE CON LA DATA SERILIALIZADA A TIPO JSON Y CON ESTATUS HTTP
-	c.IndentedJSON(http.StatusOK, albums) // (estatus, data)
+	c.IndentedJSON(http.StatusOK, albums) // (estatus, data) - serializa a JSON
+
+}
+
+// CONTROLADOR PARA INSERTAR DATOS
+func postAlbums(c *gin.Context) {
+	var newAlbum album
+	// RECIBIMOS LOS DATOS DE TIPO JSON Y LOS CONVERTIMOS A UNA ESTRUCTURA DE TIPO album
+	if err := c.BindJSON(&newAlbum); err != nil { // apuntamos a la referencia en memoria de newAlbum
+		return // si hay un error que termine de ejecutarse
+	}
+
+	// LE ENVIAREMOS A albums el nuevo album
+	albums = append(albums, newAlbum)
+
+	//AHORA DEBEMOS RESPONDERLE AL CLIENTE
+	c.IndentedJSON(http.StatusCreated, newAlbum)
+
+}
+
+// CONTROLADOR PARA DEVOLVER UN DATO ESPECIFICO
+func getAlbumsById(c *gin.Context) {
+	// MEDIANTE QUE PARAMETRO LO VAMOS BUSCAR Y ALMACENAR
+	id := c.Param("id")
+
+	for _, a := range albums {
+		if a.ID == id {
+			// Si el id que recibimos existe, devolver la respuesta de ese album
+			c.IndentedJSON(http.StatusOK, a)
+			return
+		}
+	}
+	//SINO LO ENCUENTRA DEVOLVEMOS UNA RESPUESTA AL CLIETNE
+	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "album, no encontrado"})
 
 }
 
@@ -66,6 +99,8 @@ func main() {
 
 	// CUANDO HAGAMOS LA PETICION A ESA RUTA, EJECUTAREMOS EL HANDLER
 	router.GET("/albums", getAlbums)
+	router.GET("/albums/:id", getAlbumsById) // :id - Es un parametro ligado a ID de albums
+	router.POST("/albums", postAlbums)
 
 	//LEVANTAR EL SERVIDOR
 	router.Run(":8080") // Run(puerto)
